@@ -1,22 +1,22 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const dotenv = require('dotenv');
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const dotenv = require("dotenv");
 
 // Load env vars
 dotenv.config();
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const carRoutes = require('./routes/cars');
-const bookingRoutes = require('./routes/bookings');
-const adminRoutes = require('./routes/admin');
-const chatRoutes = require('./routes/chat');
+const authRoutes = require("./routes/auth");
+const carRoutes = require("./routes/cars");
+const bookingRoutes = require("./routes/bookings");
+const adminRoutes = require("./routes/admin");
+const chatRoutes = require("./routes/chat");
 
 const app = express();
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
+// ================= MIDDLEWARE =================
 
 // Body parser
 app.use(express.json());
@@ -25,74 +25,70 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie parser
 app.use(cookieParser());
 
-// CORS – allow requests from the frontend
+// ✅ CORS (FIXED FOR VERCEL FRONTEND)
 app.use(
   cors({
-    origin: function(origin, callback) {
-      // Allow requests with no origin (like mobile apps, Postman)
-      if (!origin) return callback(null, true);
-      const allowed = [
-        process.env.CLIENT_URL || 'http://localhost:3000',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-      ];
-      if (allowed.includes(origin)) return callback(null, true);
-      callback(new Error('Not allowed by CORS'));
-    },
+    origin: process.env.CLIENT_URL, // your frontend URL
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/cars', carRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/chat', chatRoutes);
+// ================= ROUTES =================
+app.use("/api/auth", authRoutes);
+app.use("/api/cars", carRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/chat", chatRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'Server is running' });
+// ================= HEALTH CHECK =================
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Server is running 🚀",
+  });
 });
 
-// ─── 404 Handler ─────────────────────────────────────────────────────────────
+// ================= 404 HANDLER =================
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'Route not found' });
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
 });
 
-// ─── Global Error Handler ─────────────────────────────────────────────────────
+// ================= GLOBAL ERROR HANDLER =================
 app.use((err, req, res, next) => {
-  console.error('Global error:', err);
+  console.error("❌ Global error:", err);
 
-  // Handle Mongoose Bad ObjectId
-  if (err.name === 'CastError') {
-    return res.status(400).json({ success: false, message: 'Resource not found: Invalid ID format' });
+  if (err.name === "CastError") {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid ID format",
+    });
   }
 
   res.status(err.statusCode || 500).json({
     success: false,
-    message: err.message || 'Internal server error',
+    message: err.message || "Internal server error",
   });
 });
 
-// ─── DB Connection & Server Start ─────────────────────────────────────────────
+// ================= DATABASE + SERVER =================
 const PORT = process.env.PORT || 5000;
 
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log('✅  MongoDB connected');
-    app.listen(PORT, () =>
-      console.log(`🚀  Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
-    );
+    console.log("✅ MongoDB connected");
+
+    app.listen(PORT, () => {
+      console.log(
+        `🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`
+      );
+    });
   })
   .catch((err) => {
-    console.error('❌  MongoDB connection failed:', err.message);
+    console.error("❌ MongoDB connection failed:", err.message);
     process.exit(1);
   });
 
