@@ -25,10 +25,25 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie parser
 app.use(cookieParser());
 
-// ✅ CORS (FIXED FOR VERCEL FRONTEND)
+// ✅ CORS FIX (handles multiple frontend URLs)
+const allowedOrigins = [
+  "https://car-rental-system-frontend-pi.vercel.app",
+  "https://car-rental-system-frontend-rldr.vercel.app",
+  "http://localhost:3000"
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL, // your frontend URL
+    origin: function (origin, callback) {
+      // allow Postman / mobile apps
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
